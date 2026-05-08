@@ -1,19 +1,55 @@
+"use client";
+import { useEffect, useState } from "react";
+
+const BG_IMAGES = [
+  "/hero/bg1.jpg",
+  "/hero/bg2.jpg",
+  "/hero/bg3.jpg",
+  "/hero/bg4.jpg",
+  "/hero/bg5.jpg",
+];
+
 export default function HeroSection() {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPrev(current);
+      setCurrent((c) => (c + 1) % BG_IMAGES.length);
+    }, 4500);
+    return () => clearInterval(interval);
+  }, [current]);
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[var(--dark)] pt-16">
-      {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green)] via-[var(--dark)] to-[var(--dark)]" />
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[var(--dark)] to-transparent" />
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
+      {/* Background layers */}
+      {BG_IMAGES.map((src, i) => (
+        <div
+          key={src}
+          className="absolute inset-0 bg-cover bg-center transition-opacity duration-1000"
+          style={{
+            backgroundImage: `url(${src})`,
+            opacity: i === current ? 1 : i === prev ? 0 : 0,
+            zIndex: i === current ? 2 : i === prev ? 1 : 0,
+          }}
+        />
+      ))}
+
+      {/* Dark overlay */}
+      <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(135deg, rgba(8,12,8,0.72) 0%, rgba(8,12,8,0.55) 100%)" }} />
+      <div className="absolute bottom-0 left-0 right-0 h-40 z-10 bg-gradient-to-t from-[var(--dark)] to-transparent" />
 
       {/* Decorative circles */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-[var(--gold)]/10" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-[var(--gold)]/8" />
+      <div className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-[var(--gold)]/10 pointer-events-none" />
+      <div className="absolute z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-[var(--gold)]/8 pointer-events-none" />
 
-      <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+      {/* Content */}
+      <div className="relative z-20 text-center px-4 max-w-4xl mx-auto">
         <p className="text-[var(--gold)] text-sm font-semibold tracking-widest uppercase mb-4">
           Premium Golf Equipment
         </p>
-        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-white mb-6 leading-tight">
+        <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-[var(--white)] mb-6 leading-tight">
           Elevate Your{" "}
           <span className="text-[var(--gold)]">Game.</span>
         </h1>
@@ -23,16 +59,29 @@ export default function HeroSection() {
         </p>
         <a
           href="#shop"
-          className="inline-block bg-[var(--gold)] text-black font-semibold px-8 py-4 rounded-full text-base hover:bg-[var(--gold-light)] transition-colors"
+          className="inline-block bg-[var(--gold)] text-[var(--dark)] font-semibold px-8 py-4 rounded-full text-base hover:bg-[var(--gold-light)] transition-colors"
         >
           Shop the Collection →
         </a>
       </div>
 
+      {/* Dot indicators */}
+      <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+        {BG_IMAGES.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => { setPrev(current); setCurrent(i); }}
+            className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
+              i === current ? "bg-[var(--gold)] w-4" : "bg-[var(--white)]/30"
+            }`}
+          />
+        ))}
+      </div>
+
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-[var(--dim)]">
+      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 text-[var(--dim)]">
         <span className="text-xs tracking-widest uppercase">Scroll</span>
-        <div className="w-px h-10 bg-gradient-to-b from-[var(--dim)] to-transparent" />
+        <div className="w-px h-8 bg-gradient-to-b from-[var(--dim)] to-transparent" />
       </div>
     </section>
   );

@@ -32,7 +32,7 @@ async function main() {
       price: 270,
       stock: 20,
       featured: true,
-      images: [],
+      images: ["/products/img1.jpg", "/products/img2.jpg", "/products/img3.jpg", "/products/img4.jpg"],
       description:
         "Keep your clubs performing at their peak. This all-in-one kit includes a spray bottle, groove brush and microfibre cloth — everything you need to clean dirt, grass and debris off your irons and wedges after every round. Clean grooves mean better spin, more control and lower scores.",
     },
@@ -43,7 +43,7 @@ async function main() {
       price: 125,
       stock: 15,
       featured: true,
-      images: [],
+      images: ["/products/product-2-1.jpg", "/products/product-2-2.jpg", "/products/product-2-3.jpg"],
       description:
         "Rep the greatest team event in golf with this premium Ryder Cup cap. Moisture-wicking fabric keeps you cool and dry on the course, while the structured fit and iconic Ryder Cup badge make it the sharpest cap in the clubhouse. Available in Black, Grey and Navy.",
     },
@@ -76,7 +76,7 @@ async function main() {
       price: 100,
       stock: 50,
       featured: false,
-      images: [],
+      images: ["/products/product-8-1.jpg", "/products/product-8-2.jpg"],
       description:
         "The right tee makes a real difference. Our premium bamboo tees are strong, consistent and eco-friendly. Available in 5 sizes from 38mm to 83mm — whether you're teeing up a wedge or a driver, we have the perfect height for your game. 100pcs per pack so you'll never run short.",
     },
@@ -87,7 +87,7 @@ async function main() {
       price: 220,
       stock: 20,
       featured: false,
-      images: [],
+      images: ["/products/product-9-1.jpg"],
       description:
         "The simplest training aid with the biggest impact. Professional alignment sticks help you dial in your stance, club path and ball position on the range. Used by tour pros and weekend warriors alike — set them up in seconds and groove a repeatable, accurate swing. 39.37 inch, 2pcs per set.",
     },
@@ -98,7 +98,7 @@ async function main() {
       price: 4320,
       stock: 5,
       featured: true,
-      images: [],
+      images: ["/products/product-4-1.jpg", "/products/product-4-2.jpg", "/products/product-4-3.jpg"],
       description:
         "Take your game to the next level with real data. The Shot Scope LM1 is a Doppler radar launch monitor that measures club speed, ball speed, smash factor, carry distance and total distance — instantly, accurately, and with zero subscription fees. Set it behind the ball, hit your shot, and read the numbers. Perfect for the range, the garden or the simulator.",
     },
@@ -109,7 +109,7 @@ async function main() {
       price: 120,
       stock: 10,
       featured: false,
-      images: [],
+      images: ["/products/product-5-1.jpg", "/products/product-5-2.jpg"],
       description:
         "Sharp grooves spin the ball. Dull grooves don't. This heavy-duty groove cleaner features a hardened steel tip and knurled aluminium body for a confident grip — built to blast out compacted mud, grass and sand from every groove on your irons and wedges. Comes with a retractable carabiner clip so it's always on your bag. Available in Blue and Red.",
     },
