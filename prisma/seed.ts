@@ -24,7 +24,13 @@ async function main() {
       prisma.category.create({ data: { name: "Accessories", slug: "accessories" } }),
     ]);
 
-  const products = [
+  type ProductInput = {
+    name: string; slug: string; categoryId: string; price: number;
+    stock: number; featured: boolean; images: string[]; description: string;
+    variants?: { label: string; price: number; color?: string; imageIdx?: number }[];
+  };
+
+  const products: ProductInput[] = [
     {
       name: "Cleaning & Accessories Kit",
       slug: "cleaning-accessories-kit",
@@ -33,8 +39,7 @@ async function main() {
       stock: 20,
       featured: true,
       images: ["/products/img1.jpg", "/products/img2.jpg", "/products/img3.jpg", "/products/img4.jpg"],
-      description:
-        "Keep your clubs performing at their peak. This all-in-one kit includes a spray bottle, groove brush and microfibre cloth — everything you need to clean dirt, grass and debris off your irons and wedges after every round. Clean grooves mean better spin, more control and lower scores.",
+      description: "Keep your clubs performing at their peak. This all-in-one kit includes a spray bottle, groove brush and microfibre cloth — everything you need to clean dirt, grass and debris off your irons and wedges after every round. Clean grooves mean better spin, more control and lower scores.",
     },
     {
       name: "Ryder Cup Cap",
@@ -44,8 +49,12 @@ async function main() {
       stock: 15,
       featured: true,
       images: ["/products/product-2-1.jpg", "/products/product-2-2.jpg", "/products/product-2-3.jpg"],
-      description:
-        "Rep the greatest team event in golf with this premium Ryder Cup cap. Moisture-wicking fabric keeps you cool and dry on the course, while the structured fit and iconic Ryder Cup badge make it the sharpest cap in the clubhouse. Available in Black, Grey and Navy.",
+      description: "Rep the greatest team event in golf with this premium Ryder Cup cap. Moisture-wicking fabric keeps you cool and dry on the course, while the structured fit and iconic Ryder Cup badge make it the sharpest cap in the clubhouse. Available in Black, Grey and Navy.",
+      variants: [
+        { label: "Black", price: 125, color: "#111111", imageIdx: 0 },
+        { label: "Grey",  price: 120, color: "#9a9a9a", imageIdx: 1 },
+        { label: "Navy",  price: 120, color: "#1a2a4a", imageIdx: 2 },
+      ],
     },
     {
       name: "Divot Repair Tool",
@@ -55,8 +64,7 @@ async function main() {
       stock: 30,
       featured: false,
       images: [],
-      description:
-        "Fix your pitch marks and leave the green better than you found it. This solid stainless steel divot repair tool fits comfortably in your pocket and makes quick work of ball marks. A must-have for every serious golfer who respects the course.",
+      description: "Fix your pitch marks and leave the green better than you found it. This solid stainless steel divot repair tool fits comfortably in your pocket and makes quick work of ball marks. A must-have for every serious golfer who respects the course.",
     },
     {
       name: "Ball Markers",
@@ -66,8 +74,7 @@ async function main() {
       stock: 25,
       featured: false,
       images: [],
-      description:
-        "Never lose your place on the green again. These premium ball markers are slim, durable and easy to spot — perfect for marking your ball cleanly without interfering with your playing partners. Small enough to forget you have them, essential enough that you'll notice when you don't.",
+      description: "Never lose your place on the green again. These premium ball markers are slim, durable and easy to spot — perfect for marking your ball cleanly without interfering with your playing partners. Small enough to forget you have them, essential enough that you'll notice when you don't.",
     },
     {
       name: "Tees",
@@ -77,8 +84,14 @@ async function main() {
       stock: 50,
       featured: false,
       images: ["/products/product-8-1.jpg", "/products/product-8-2.jpg"],
-      description:
-        "The right tee makes a real difference. Our premium bamboo tees are strong, consistent and eco-friendly. Available in 5 sizes from 38mm to 83mm — whether you're teeing up a wedge or a driver, we have the perfect height for your game. 100pcs per pack so you'll never run short.",
+      description: "The right tee makes a real difference. Our premium bamboo tees are strong, consistent and eco-friendly. Available in 5 sizes from 38mm to 83mm — whether you're teeing up a wedge or a driver, we have the perfect height for your game. 100pcs per pack so you'll never run short.",
+      variants: [
+        { label: "38mm — 100pcs", price: 100, color: "#c8a84b", imageIdx: 0 },
+        { label: "42mm — 100pcs", price: 105, color: "#b8943a", imageIdx: 0 },
+        { label: "54mm — 100pcs", price: 110, color: "#a8842a", imageIdx: 0 },
+        { label: "70mm — 100pcs", price: 120, color: "#987420", imageIdx: 0 },
+        { label: "83mm — 100pcs", price: 135, color: "#886410", imageIdx: 0 },
+      ],
     },
     {
       name: "Alignment Sticks",
@@ -88,8 +101,7 @@ async function main() {
       stock: 20,
       featured: false,
       images: ["/products/product-9-1.jpg"],
-      description:
-        "The simplest training aid with the biggest impact. Professional alignment sticks help you dial in your stance, club path and ball position on the range. Used by tour pros and weekend warriors alike — set them up in seconds and groove a repeatable, accurate swing. 39.37 inch, 2pcs per set.",
+      description: "The simplest training aid with the biggest impact. Professional alignment sticks help you dial in your stance, club path and ball position on the range. Used by tour pros and weekend warriors alike — set them up in seconds and groove a repeatable, accurate swing. 39.37 inch, 2pcs per set.",
     },
     {
       name: "Shot Scope LM1",
@@ -99,8 +111,7 @@ async function main() {
       stock: 5,
       featured: true,
       images: ["/products/product-4-1.jpg", "/products/product-4-2.jpg", "/products/product-4-3.jpg"],
-      description:
-        "Take your game to the next level with real data. The Shot Scope LM1 is a Doppler radar launch monitor that measures club speed, ball speed, smash factor, carry distance and total distance — instantly, accurately, and with zero subscription fees. Set it behind the ball, hit your shot, and read the numbers. Perfect for the range, the garden or the simulator.",
+      description: "Take your game to the next level with real data. The Shot Scope LM1 is a Doppler radar launch monitor that measures club speed, ball speed, smash factor, carry distance and total distance — instantly, accurately, and with zero subscription fees. Set it behind the ball, hit your shot, and read the numbers. Perfect for the range, the garden or the simulator.",
     },
     {
       name: "Groove Cleaner Pro",
@@ -110,13 +121,23 @@ async function main() {
       stock: 10,
       featured: false,
       images: ["/products/product-5-1.jpg", "/products/product-5-2.jpg"],
-      description:
-        "Sharp grooves spin the ball. Dull grooves don't. This heavy-duty groove cleaner features a hardened steel tip and knurled aluminium body for a confident grip — built to blast out compacted mud, grass and sand from every groove on your irons and wedges. Comes with a retractable carabiner clip so it's always on your bag. Available in Blue and Red.",
+      description: "Sharp grooves spin the ball. Dull grooves don't. This heavy-duty groove cleaner features a hardened steel tip and knurled aluminium body for a confident grip — built to blast out compacted mud, grass and sand from every groove on your irons and wedges. Comes with a retractable carabiner clip so it's always on your bag. Available in Blue and Red.",
+      variants: [
+        { label: "Blue", price: 120, color: "#1a5aab", imageIdx: 0 },
+        { label: "Red",  price: 120, color: "#c0392b", imageIdx: 1 },
+      ],
     },
   ];
 
-  for (const product of products) {
-    await prisma.product.create({ data: product });
+  for (const { variants, ...product } of products) {
+    await prisma.product.create({
+      data: {
+        ...product,
+        variants: variants
+          ? { create: variants.map(v => ({ ...v, imageIdx: v.imageIdx ?? 0 })) }
+          : undefined,
+      },
+    });
   }
 
   console.log(`Seeded ${products.length} products across 5 categories.`);

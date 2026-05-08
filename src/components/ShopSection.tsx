@@ -2,6 +2,14 @@
 import { useState, useMemo } from "react";
 import ProductCard from "./ProductCard";
 
+type Variant = {
+  id: string;
+  label: string;
+  price: number;
+  color: string | null;
+  imageIdx: number;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -9,6 +17,7 @@ type Product = {
   images: string[];
   stock: number;
   category: { id: string; name: string };
+  variants: Variant[];
 };
 
 type Category = { id: string; name: string };
@@ -93,9 +102,10 @@ export default function ShopSection({ products, categories }: Props) {
               id={product.id}
               name={product.name}
               price={product.price}
-              image={product.images[0] ?? ""}
+              images={product.images}
               category={product.category.name}
               stock={product.stock}
+              variants={product.variants}
             />
           ))}
         </div>

@@ -8,7 +8,7 @@ export const revalidate = 60;
 export default async function Home() {
   const [products, categories] = await Promise.all([
     prisma.product.findMany({
-      include: { category: true },
+      include: { category: true, variants: { orderBy: { label: "asc" } } },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     }),
     prisma.category.findMany({ orderBy: { name: "asc" } }),
