@@ -2,12 +2,12 @@ export default function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-[var(--dark)] pt-16">
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[var(--gold)]/10 via-transparent to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--green)] via-[var(--dark)] to-[var(--dark)]" />
       <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[var(--dark)] to-transparent" />
 
-      {/* Decorative circle */}
+      {/* Decorative circles */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-[var(--gold)]/10" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-[var(--gold)]/5" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full border border-[var(--gold)]/8" />
 
       <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
         <p className="text-[var(--gold)] text-sm font-semibold tracking-widest uppercase mb-4">

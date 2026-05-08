@@ -8,123 +8,118 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { slug: "accessories" },
-      update: {},
-      create: { name: "Accessories", slug: "accessories" },
-    }),
-    prisma.category.upsert({
-      where: { slug: "apparel" },
-      update: {},
-      create: { name: "Apparel", slug: "apparel" },
-    }),
-    prisma.category.upsert({
-      where: { slug: "technology" },
-      update: {},
-      create: { name: "Technology", slug: "technology" },
-    }),
-    prisma.category.upsert({
-      where: { slug: "training" },
-      update: {},
-      create: { name: "Training", slug: "training" },
-    }),
-  ]);
+  // Clear existing data
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.product.deleteMany();
+  await prisma.category.deleteMany();
 
-  const [accessories, apparel, technology, training] = categories;
+  // Create categories from original site
+  const [cleaning, caps, ballMarkers, launchMonitors, accessories] =
+    await Promise.all([
+      prisma.category.create({ data: { name: "Cleaning", slug: "cleaning" } }),
+      prisma.category.create({ data: { name: "Caps", slug: "caps" } }),
+      prisma.category.create({ data: { name: "Ball Markers & Pitch", slug: "ball-markers-pitch" } }),
+      prisma.category.create({ data: { name: "Launch Monitors", slug: "launch-monitors" } }),
+      prisma.category.create({ data: { name: "Accessories", slug: "accessories" } }),
+    ]);
 
   const products = [
     {
-      name: "Ryder Cup Premium Cap",
-      slug: "ryder-cup-premium-cap",
-      description: "Official Ryder Cup cap with moisture-wicking technology.",
-      price: 850,
-      stock: 24,
+      name: "Cleaning & Accessories Kit",
+      slug: "cleaning-accessories-kit",
+      categoryId: cleaning.id,
+      price: 270,
+      stock: 20,
       featured: true,
-      categoryId: apparel.id,
       images: [],
+      description:
+        "Keep your clubs performing at their peak. This all-in-one kit includes a spray bottle, groove brush and microfibre cloth — everything you need to clean dirt, grass and debris off your irons and wedges after every round. Clean grooves mean better spin, more control and lower scores.",
     },
     {
-      name: "Garmin Approach S62 GPS Watch",
-      slug: "garmin-approach-s62",
-      description: "Premium GPS golf watch with 42,000+ preloaded courses.",
-      price: 12999,
-      stock: 8,
-      featured: true,
-      categoryId: technology.id,
-      images: [],
-    },
-    {
-      name: "ProV1 Practice Balls (12-pack)",
-      slug: "prov1-practice-12pack",
-      description: "Premium practice balls with consistent flight and feel.",
-      price: 699,
-      stock: 50,
-      featured: false,
-      categoryId: accessories.id,
-      images: [],
-    },
-    {
-      name: "Golf Swing Trainer Stick",
-      slug: "swing-trainer-stick",
-      description: "Improve your swing arc and tempo with this training aid.",
-      price: 499,
+      name: "Ryder Cup Cap",
+      slug: "ryder-cup-cap",
+      categoryId: caps.id,
+      price: 125,
       stock: 15,
-      featured: false,
-      categoryId: training.id,
-      images: [],
-    },
-    {
-      name: "Bushnell Tour V5 Rangefinder",
-      slug: "bushnell-tour-v5",
-      description: "Tournament-legal laser rangefinder with slope technology.",
-      price: 8499,
-      stock: 6,
       featured: true,
-      categoryId: technology.id,
       images: [],
+      description:
+        "Rep the greatest team event in golf with this premium Ryder Cup cap. Moisture-wicking fabric keeps you cool and dry on the course, while the structured fit and iconic Ryder Cup badge make it the sharpest cap in the clubhouse. Available in Black, Grey and Navy.",
     },
     {
-      name: "Titleist Players Glove",
-      slug: "titleist-players-glove",
-      description: "Premium cabretta leather glove for exceptional feel.",
-      price: 349,
+      name: "Divot Repair Tool",
+      slug: "divot-repair-tool",
+      categoryId: ballMarkers.id,
+      price: 180,
       stock: 30,
       featured: false,
+      images: [],
+      description:
+        "Fix your pitch marks and leave the green better than you found it. This solid stainless steel divot repair tool fits comfortably in your pocket and makes quick work of ball marks. A must-have for every serious golfer who respects the course.",
+    },
+    {
+      name: "Ball Markers",
+      slug: "ball-markers",
+      categoryId: ballMarkers.id,
+      price: 90,
+      stock: 25,
+      featured: false,
+      images: [],
+      description:
+        "Never lose your place on the green again. These premium ball markers are slim, durable and easy to spot — perfect for marking your ball cleanly without interfering with your playing partners. Small enough to forget you have them, essential enough that you'll notice when you don't.",
+    },
+    {
+      name: "Tees",
+      slug: "tees",
       categoryId: accessories.id,
+      price: 100,
+      stock: 50,
+      featured: false,
       images: [],
+      description:
+        "The right tee makes a real difference. Our premium bamboo tees are strong, consistent and eco-friendly. Available in 5 sizes from 38mm to 83mm — whether you're teeing up a wedge or a driver, we have the perfect height for your game. 100pcs per pack so you'll never run short.",
     },
     {
-      name: "Under Armour Polo Shirt",
-      slug: "ua-polo-shirt",
-      description: "Heat Gear technology keeps you cool in the South African sun.",
-      price: 1199,
-      stock: 18,
+      name: "Alignment Sticks",
+      slug: "alignment-sticks",
+      categoryId: accessories.id,
+      price: 220,
+      stock: 20,
       featured: false,
-      categoryId: apparel.id,
       images: [],
+      description:
+        "The simplest training aid with the biggest impact. Professional alignment sticks help you dial in your stance, club path and ball position on the range. Used by tour pros and weekend warriors alike — set them up in seconds and groove a repeatable, accurate swing. 39.37 inch, 2pcs per set.",
     },
     {
-      name: "Golf Putting Mat 3m",
-      slug: "putting-mat-3m",
-      description: "Practice your putting stroke at home with this tour-quality mat.",
-      price: 1899,
-      stock: 12,
-      featured: false,
-      categoryId: training.id,
+      name: "Shot Scope LM1",
+      slug: "shot-scope-lm1",
+      categoryId: launchMonitors.id,
+      price: 4320,
+      stock: 5,
+      featured: true,
       images: [],
+      description:
+        "Take your game to the next level with real data. The Shot Scope LM1 is a Doppler radar launch monitor that measures club speed, ball speed, smash factor, carry distance and total distance — instantly, accurately, and with zero subscription fees. Set it behind the ball, hit your shot, and read the numbers. Perfect for the range, the garden or the simulator.",
+    },
+    {
+      name: "Groove Cleaner Pro",
+      slug: "groove-cleaner-pro",
+      categoryId: cleaning.id,
+      price: 120,
+      stock: 10,
+      featured: false,
+      images: [],
+      description:
+        "Sharp grooves spin the ball. Dull grooves don't. This heavy-duty groove cleaner features a hardened steel tip and knurled aluminium body for a confident grip — built to blast out compacted mud, grass and sand from every groove on your irons and wedges. Comes with a retractable carabiner clip so it's always on your bag. Available in Blue and Red.",
     },
   ];
 
   for (const product of products) {
-    await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {},
-      create: product,
-    });
+    await prisma.product.create({ data: product });
   }
 
-  console.log(`Seeded ${categories.length} categories and ${products.length} products.`);
+  console.log(`Seeded ${products.length} products across 5 categories.`);
 }
 
 main()
