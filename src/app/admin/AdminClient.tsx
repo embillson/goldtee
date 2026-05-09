@@ -3,6 +3,7 @@ import { useState } from "react";
 import { formatZAR } from "@/lib/format";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import RevenueChart from "@/components/RevenueChart";
 
 type Product = {
   id: string;
@@ -35,7 +36,7 @@ type Props = {
 type RowEdit = { stock: string; price: string };
 
 export default function AdminClient({ products, categories, orders }: Props) {
-  const [tab, setTab] = useState<"products" | "orders">("products");
+  const [tab, setTab] = useState<"overview" | "products" | "orders">("overview");
   const [edits, setEdits] = useState<Record<string, RowEdit>>({});
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [showForm, setShowForm] = useState(false);
@@ -44,6 +45,9 @@ export default function AdminClient({ products, categories, orders }: Props) {
     () => Object.fromEntries(orders.map((o) => [o.id, o.status]))
   );
   const [statusSaving, setStatusSaving] = useState<Record<string, boolean>>({});
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("CONFIRMED");
+  const [bulkSaving, setBulkSaving] = useState(false);
 
   async function updateOrderStatus(id: string, status: string) {
     setStatusSaving((s) => ({ ...s, [id]: true }));
@@ -54,6 +58,42 @@ export default function AdminClient({ products, categories, orders }: Props) {
       body: JSON.stringify({ status }),
     });
     setStatusSaving((s) => ({ ...s, [id]: false }));
+  }
+
+  async function applyBulkStatus() {
+    setBulkSaving(true);
+    await Promise.all(
+      [...selectedOrders].map((id) =>
+        fetch(`/api/admin/orders/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: bulkStatus }),
+        })
+      )
+    );
+    setOrderStatuses((s) => {
+      const updated = { ...s };
+      selectedOrders.forEach((id) => { updated[id] = bulkStatus; });
+      return updated;
+    });
+    setSelectedOrders(new Set());
+    setBulkSaving(false);
+  }
+
+  function toggleOrder(id: string) {
+    setSelectedOrders((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAllOrders() {
+    if (selectedOrders.size === orders.length) {
+      setSelectedOrders(new Set());
+    } else {
+      setSelectedOrders(new Set(orders.map((o) => o.id)));
+    }
   }
   const router = useRouter();
 
@@ -212,7 +252,7 @@ export default function AdminClient({ products, categories, orders }: Props) {
 
         {/* Tabs */}
         <div style={{ display: "flex", gap: "0", borderBottom: "1px solid var(--border)" }}>
-          {(["products", "orders"] as const).map((t) => (
+          {(["overview", "products", "orders"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -235,6 +275,59 @@ export default function AdminClient({ products, categories, orders }: Props) {
             </button>
           ))}
         </div>
+
+        {/* Overview tab */}
+        {tab === "overview" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <RevenueChart orders={orders} days={14} />
+
+            {/* Top products by order frequency */}
+            <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border)" }}>
+                <h3 style={{ fontSize: "14px", fontWeight: 600, letterSpacing: "1px", textTransform: "uppercase", color: "var(--white)" }}>
+                  Top Products
+                </h3>
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr>
+                      {["Product", "Units Sold", "Revenue"].map((h) => (
+                        <th key={h} style={{ textAlign: "left", padding: "10px 16px", fontSize: "11px", letterSpacing: "1.5px", textTransform: "uppercase", color: "var(--dim)", borderBottom: "1px solid var(--border)", fontWeight: 500 }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const tally: Record<string, { name: string; units: number; revenue: number }> = {};
+                      orders.forEach((o) =>
+                        o.items.forEach((item) => {
+                          const name = item.product.name;
+                          if (!tally[name]) tally[name] = { name, units: 0, revenue: 0 };
+                          tally[name].units += item.quantity;
+                          tally[name].revenue += item.price * item.quantity;
+                        })
+                      );
+                      const rows = Object.values(tally).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+                      if (rows.length === 0) return (
+                        <tr><td colSpan={3} style={{ padding: "2rem", textAlign: "center", color: "var(--dim)", fontSize: "13px" }}>No order data yet.</td></tr>
+                      );
+                      return rows.map((r) => (
+                        <tr key={r.name} style={{ borderBottom: "1px solid rgba(200,168,75,0.06)" }}>
+                          <td style={{ padding: "12px 16px", fontSize: "14px", color: "var(--white)" }}>{r.name}</td>
+                          <td style={{ padding: "12px 16px", fontSize: "14px", color: "var(--dim)" }}>{r.units}</td>
+                          <td style={{ padding: "12px 16px", fontSize: "14px", color: "var(--gold)", fontFamily: "Georgia, serif" }}>{formatZAR(r.revenue)}</td>
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Products table */}
         {tab === "products" && (
@@ -412,51 +505,117 @@ export default function AdminClient({ products, categories, orders }: Props) {
         {/* Orders tab */}
         {tab === "orders" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-            {orders.map((order) => (
-              <div key={order.id} style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "2px", padding: "1rem 1.5rem" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
-                  <div>
-                    <p style={{ color: "var(--white)", fontWeight: 600, fontSize: "14px" }}>{order.name}</p>
-                    <p style={{ color: "var(--dim)", fontSize: "12px", marginTop: "2px" }}>{order.email}</p>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+
+            {/* Select-all + bulk bar */}
+            {orders.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "1rem", padding: "0.75rem 1rem", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "2px", flexWrap: "wrap" }}>
+                <label style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer", fontSize: "12px", color: "var(--dim)", userSelect: "none" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedOrders.size === orders.length}
+                    onChange={toggleAllOrders}
+                    style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer" }}
+                  />
+                  {selectedOrders.size === 0 ? "Select all" : `${selectedOrders.size} selected`}
+                </label>
+
+                {selectedOrders.size > 0 && (
+                  <>
+                    <div style={{ height: "1px", width: "1px", background: "var(--border)", alignSelf: "stretch" }} />
+                    <span style={{ fontSize: "12px", color: "var(--dim)", letterSpacing: "0.5px" }}>Set status:</span>
                     <select
-                      value={orderStatuses[order.id] ?? order.status}
-                      onChange={(e) => updateOrderStatus(order.id, e.target.value)}
-                      disabled={statusSaving[order.id]}
-                      style={{
-                        background: "var(--surface-2)",
-                        border: "1px solid var(--border)",
-                        color: (() => {
-                          const s = orderStatuses[order.id] ?? order.status;
-                          return s === "PENDING" ? "#facc15" : s === "DELIVERED" ? "#6fcf6f" : s === "CANCELLED" ? "#e74c3c" : "var(--gold)";
-                        })(),
-                        padding: "4px 8px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        letterSpacing: "0.5px",
-                        borderRadius: "2px",
-                        outline: "none",
-                        cursor: "pointer",
-                        opacity: statusSaving[order.id] ? 0.5 : 1,
-                      }}
+                      value={bulkStatus}
+                      onChange={(e) => setBulkStatus(e.target.value)}
+                      style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--white)", padding: "5px 10px", fontSize: "12px", borderRadius: "2px", outline: "none", cursor: "pointer" }}
                     >
                       {["PENDING","CONFIRMED","SHIPPED","DELIVERED","CANCELLED"].map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
-                    <span style={{ color: "var(--gold)", fontWeight: 700, fontFamily: "Georgia, serif", fontSize: "18px" }}>
-                      {formatZAR(order.total)}
-                    </span>
+                    <button
+                      onClick={applyBulkStatus}
+                      disabled={bulkSaving}
+                      style={{ background: "var(--gold)", color: "var(--dark)", border: "none", padding: "6px 16px", fontSize: "12px", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 600, cursor: "pointer", borderRadius: "2px", opacity: bulkSaving ? 0.6 : 1 }}
+                    >
+                      {bulkSaving ? "Saving…" : "Apply"}
+                    </button>
+                    <button
+                      onClick={() => setSelectedOrders(new Set())}
+                      style={{ background: "transparent", border: "none", color: "var(--dim)", fontSize: "12px", cursor: "pointer", padding: "4px 8px" }}
+                    >
+                      Clear
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+
+            {orders.map((order) => {
+              const isSelected = selectedOrders.has(order.id);
+              return (
+                <div
+                  key={order.id}
+                  style={{
+                    background: isSelected ? "rgba(200,168,75,0.05)" : "var(--surface)",
+                    border: `1px solid ${isSelected ? "var(--gold)" : "var(--border)"}`,
+                    borderRadius: "2px",
+                    padding: "1rem 1.5rem",
+                    transition: "border-color 0.15s",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleOrder(order.id)}
+                        style={{ accentColor: "var(--gold)", width: "15px", height: "15px", cursor: "pointer", flexShrink: 0 }}
+                      />
+                      <div>
+                        <p style={{ color: "var(--white)", fontWeight: 600, fontSize: "14px" }}>{order.name}</p>
+                        <p style={{ color: "var(--dim)", fontSize: "12px", marginTop: "2px" }}>{order.email}</p>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+                      <select
+                        value={orderStatuses[order.id] ?? order.status}
+                        onChange={(e) => updateOrderStatus(order.id, e.target.value)}
+                        disabled={statusSaving[order.id]}
+                        style={{
+                          background: "var(--surface-2)",
+                          border: "1px solid var(--border)",
+                          color: (() => {
+                            const s = orderStatuses[order.id] ?? order.status;
+                            return s === "PENDING" ? "#facc15" : s === "DELIVERED" ? "#6fcf6f" : s === "CANCELLED" ? "#e74c3c" : "var(--gold)";
+                          })(),
+                          padding: "4px 8px",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          letterSpacing: "0.5px",
+                          borderRadius: "2px",
+                          outline: "none",
+                          cursor: "pointer",
+                          opacity: statusSaving[order.id] ? 0.5 : 1,
+                        }}
+                      >
+                        {["PENDING","CONFIRMED","SHIPPED","DELIVERED","CANCELLED"].map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                      <span style={{ color: "var(--gold)", fontWeight: 700, fontFamily: "Georgia, serif", fontSize: "18px" }}>
+                        {formatZAR(order.total)}
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: "12px", color: "var(--dim)", paddingLeft: "27px" }}>
+                    {order.items.map((item, i) => (
+                      <span key={i}>{item.product.name} ×{item.quantity}{i < order.items.length - 1 ? " · " : ""}</span>
+                    ))}
                   </div>
                 </div>
-                <div style={{ fontSize: "12px", color: "var(--dim)" }}>
-                  {order.items.map((item, i) => (
-                    <span key={i}>{item.product.name} ×{item.quantity}{i < order.items.length - 1 ? " · " : ""}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
+              );
+            })}
+
             {orders.length === 0 && (
               <div style={{ textAlign: "center", padding: "3rem", color: "var(--dim)", fontSize: "14px" }}>No orders yet.</div>
             )}
