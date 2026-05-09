@@ -1,0 +1,13 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark background -->
+  <rect width="32" height="32" rx="6" fill="#0e1f0e"/>
+  <!-- Tee shaft -->
+  <rect x="14.5" y="18" width="3" height="10" rx="1.5" fill="#c8a84b"/>
+  <!-- Tee head -->
+  <rect x="9" y="14" width="14" height="5" rx="2.5" fill="#c8a84b"/>
+  <!-- Golf ball -->
+  <circle cx="16" cy="9" r="5.5" fill="#f4f0e6"/>
+  <!-- Ball dimple arc -->
+  <path d="M12 7.5 Q16 5.5 20 7.5" stroke="#ccc8be" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+  <path d="M11.5 10.5 Q16 12.5 20.5 10.5" stroke="#ccc8be" stroke-width="0.8" fill="none" stroke-linecap="round"/>
+</svg>

@@ -1,7 +1,9 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import ProductCard from "./ProductCard";
 import ProductModal from "./ProductModal";
+import { useDebounce } from "@/lib/useDebounce";
 
 type Variant = {
   id: string;
@@ -13,6 +15,7 @@ type Variant = {
 
 type Product = {
   id: string;
+  slug: string;
   name: string;
   price: number;
   images: string[];
@@ -31,90 +34,147 @@ type Props = {
 
 export default function ShopSection({ products, categories }: Props) {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 250);
   const [activeCategory, setActiveCategory] = useState("All");
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const slug = searchParams.get("product");
+    if (slug) {
+      const found = products.find((p) => p.slug === slug);
+      if (found) setModalProduct(found);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function openModal(product: Product) {
+    setModalProduct(product);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("product", product.slug);
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }
+
+  function closeModal() {
+    setModalProduct(null);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("product");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "/", { scroll: false });
+  }
 
   const filtered = useMemo(() => {
     return products.filter((p) => {
-      const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch = p.name.toLowerCase().includes(debouncedSearch.toLowerCase());
       const matchesCat = activeCategory === "All" || p.category.name === activeCategory;
       return matchesSearch && matchesCat;
     });
-  }, [products, search, activeCategory]);
+  }, [products, debouncedSearch, activeCategory]);
 
   return (
     <>
-      <section id="shop" className="w-full py-24">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-8">
-
-          {/* Header */}
-          <div className="text-center mb-12">
-            <p className="text-[var(--gold)] text-xs font-semibold tracking-widest uppercase mb-3">
-              The Collection
-            </p>
-            <h2 className="text-3xl sm:text-4xl font-bold text-[var(--white)]">
-              {filtered.length} Product{filtered.length !== 1 ? "s" : ""}
+      <section
+        id="shop"
+        className="px-4 sm:px-10"
+        style={{ paddingTop: "5rem", paddingBottom: "5rem", background: "var(--dark)", position: "relative", zIndex: 1 }}
+      >
+        {/* Section header */}
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "3rem", flexWrap: "wrap", gap: "1rem" }}>
+          <div>
+            <h2 style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontSize: "clamp(32px,5vw,42px)", fontWeight: 700, color: "var(--white)", lineHeight: 1.1 }}>
+              The <span style={{ color: "var(--gold)" }}>Collection</span>
             </h2>
           </div>
+          <div style={{ fontSize: "13px", color: "var(--dim)" }}>
+            {filtered.length} product{filtered.length !== 1 ? "s" : ""}
+          </div>
+        </div>
 
-          {/* Filters */}
-          <div className="flex flex-col items-center gap-4 mb-12">
-            <div className="relative w-full max-w-sm">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--dim)]">⌕</span>
-              <input
-                type="text"
-                placeholder="Search products…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[var(--surface)] border border-[var(--border)] text-[var(--white)] placeholder-[var(--dim)] rounded-full pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[var(--gold)]/50 transition-colors"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap justify-center">
-              {["All", ...categories.map((c) => c.name)].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    activeCategory === cat
-                      ? "bg-[var(--gold)] text-[var(--dark)]"
-                      : "bg-[var(--surface)] text-[var(--dim)] border border-[var(--border)] hover:border-[var(--gold)]/40 hover:text-[var(--white)]"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
+        {/* Filter bar */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "2.5rem", flexWrap: "wrap", alignItems: "center" }}>
+          {/* Search */}
+          <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            <span style={{ position: "absolute", left: "16px", top: "50%", transform: "translateY(-50%)", color: "var(--dim)", fontSize: "15px" }}>⌕</span>
+            <input
+              type="text"
+              placeholder="Search products…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{
+                width: "100%",
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                borderRadius: "4px",
+                padding: "12px 16px 12px 44px",
+                fontSize: "14px",
+                color: "var(--text)",
+                outline: "none",
+                transition: "border 0.2s",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--gold)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
+            />
           </div>
 
-          {/* Grid */}
-          {filtered.length === 0 ? (
-            <div className="text-center py-24 text-[var(--dim)]">
-              <div className="text-5xl mb-4">⛳</div>
-              <p>No products found</p>
-            </div>
-          ) : (
-            <div className="flex flex-wrap justify-center gap-6">
-              {filtered.map((product) => (
-                <div
-                  key={product.id}
-                  className="w-full max-w-[260px] cursor-pointer"
-                  onClick={() => setModalProduct(product)}
-                >
-                  <ProductCard
-                    id={product.id}
-                    name={product.name}
-                    price={product.price}
-                    images={product.images}
-                    category={product.category.name}
-                    stock={product.stock}
-                    variants={product.variants}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
+          {/* Category tabs */}
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            {["All", ...categories.map((c) => c.name)].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                style={{
+                  padding: "8px 16px",
+                  border: "1px solid var(--border)",
+                  borderRadius: "2px",
+                  fontSize: "12px",
+                  letterSpacing: "1px",
+                  textTransform: "uppercase",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                  fontFamily: "inherit",
+                  background: activeCategory === cat ? "var(--gold)" : "transparent",
+                  color: activeCategory === cat ? "var(--dark)" : "var(--dim)",
+                  borderColor: activeCategory === cat ? "var(--gold)" : "var(--border)",
+                  fontWeight: activeCategory === cat ? 600 : 400,
+                }}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
+
+        {/* Product grid */}
+        {filtered.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "6rem 0", color: "var(--dim)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>⛳</div>
+            <p style={{ fontSize: "14px" }}>No products found</p>
+          </div>
+        ) : (
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+            gap: "2px",
+          }}>
+            {filtered.map((product) => (
+              <ProductCard
+                key={product.id}
+                id={product.id}
+                slug={product.slug}
+                name={product.name}
+                price={product.price}
+                images={product.images}
+                description={product.description}
+                category={product.category.name}
+                stock={product.stock}
+                variants={product.variants}
+                onOpenModal={() => openModal(product)}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Product modal */}
@@ -124,7 +184,19 @@ export default function ShopSection({ products, categories }: Props) {
             ? { ...modalProduct, category: modalProduct.category.name }
             : null
         }
-        onClose={() => setModalProduct(null)}
+        related={
+          modalProduct
+            ? products
+                .filter((p) => p.category.id === modalProduct.category.id && p.id !== modalProduct.id)
+                .slice(0, 3)
+                .map((p) => ({ ...p, category: p.category.name }))
+            : []
+        }
+        onClose={closeModal}
+        onOpenProduct={(p) => {
+          const full = products.find((x) => x.id === p.id);
+          if (full) openModal(full);
+        }}
       />
     </>
   );

@@ -57,12 +57,18 @@ export default function HeroSection() {
           Premium golf gadgets and accessories crafted for those who play
           seriously.
         </p>
-        <a
-          href="#shop"
+        <button
+          onClick={() => {
+            const el = document.getElementById("shop");
+            if (el) {
+              const y = el.getBoundingClientRect().top + window.scrollY - 64;
+              window.scrollTo({ top: y, behavior: "smooth" });
+            }
+          }}
           className="inline-block bg-[var(--gold)] text-[var(--dark)] font-semibold px-8 py-4 rounded-full text-base hover:bg-[var(--gold-light)] transition-colors"
         >
           Shop the Collection →
-        </a>
+        </button>
       </div>
 
       {/* Dot indicators */}

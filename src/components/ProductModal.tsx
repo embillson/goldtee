@@ -1,7 +1,29 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useCart } from "@/store/cart";
+import { useToast } from "@/store/toast";
 import { formatZAR } from "@/lib/format";
+import ImageLightbox from "./ImageLightbox";
+
+function CopyLinkButton({ slug }: { slug: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    const url = `${window.location.origin}/?product=${slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      onClick={copy}
+      title="Copy share link"
+      className="text-[var(--dim)] hover:text-[var(--gold)] transition-colors text-sm px-2"
+    >
+      {copied ? "✓ Copied!" : "⎘ Share"}
+    </button>
+  );
+}
 
 type Variant = {
   id: string;
@@ -13,6 +35,7 @@ type Variant = {
 
 type Product = {
   id: string;
+  slug: string;
   name: string;
   price: number;
   images: string[];
@@ -24,17 +47,22 @@ type Product = {
 
 type Props = {
   product: Product | null;
+  related: Product[];
   onClose: () => void;
+  onOpenProduct: (p: Product) => void;
 };
 
-export default function ProductModal({ product, onClose }: Props) {
-  const { addItem, toggleCart } = useCart();
+export default function ProductModal({ product, related, onClose, onOpenProduct }: Props) {
+  const { addItem } = useCart();
+  const { show: showToast } = useToast();
   const [imgIdx, setImgIdx] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   useEffect(() => {
     if (!product) return;
     setImgIdx(0);
+    setLightboxOpen(false);
     setSelectedVariant(product.variants.length > 0 ? product.variants[0] : null);
   }, [product]);
 
@@ -60,14 +88,15 @@ export default function ProductModal({ product, onClose }: Props) {
 
   function handleAdd() {
     const variantLabel = selectedVariant?.label;
+    const itemName = variantLabel ? `${product.name} — ${variantLabel}` : product.name;
     addItem({
       id: selectedVariant ? `${product.id}__${variantLabel}` : product.id,
-      name: variantLabel ? `${product.name} — ${variantLabel}` : product.name,
+      name: itemName,
       price: activePrice,
       image: images[imgIdx] ?? "",
     });
+    showToast(`${itemName} added to cart`);
     onClose();
-    toggleCart();
   }
 
   function prev() {
@@ -80,6 +109,14 @@ export default function ProductModal({ product, onClose }: Props) {
 
   return (
     <>
+      {lightboxOpen && images[imgIdx] && (
+        <ImageLightbox
+          src={images[imgIdx]}
+          alt={product.name}
+          onClose={() => setLightboxOpen(false)}
+        />
+      )}
+
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/70 z-50 backdrop-blur-sm"
@@ -101,7 +138,9 @@ export default function ProductModal({ product, onClose }: Props) {
                   <img
                     src={images[imgIdx]}
                     alt={product.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-zoom-in"
+                    onClick={() => setLightboxOpen(true)}
+                    title="Click to zoom"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-6xl text-[var(--dim)]">
@@ -170,7 +209,7 @@ export default function ProductModal({ product, onClose }: Props) {
             </div>
 
             {/* Info panel */}
-            <div className="md:w-1/2 p-6 flex flex-col gap-5">
+            <div className="md:w-1/2 p-4 sm:p-6 flex flex-col gap-4 sm:gap-5">
               {/* Close button */}
               <div className="flex items-start justify-between">
                 <div>
@@ -178,12 +217,15 @@ export default function ProductModal({ product, onClose }: Props) {
                     {product.category}
                   </span>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="text-[var(--dim)] hover:text-[var(--white)] text-xl leading-none ml-4"
-                >
-                  ✕
-                </button>
+                <div className="flex items-center gap-1 ml-4">
+                  <CopyLinkButton slug={product.slug} />
+                  <button
+                    onClick={onClose}
+                    className="text-[var(--dim)] hover:text-[var(--white)] text-xl leading-none"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
 
               <h2 className="text-xl font-bold text-[var(--white)] leading-snug">
@@ -252,6 +294,35 @@ export default function ProductModal({ product, onClose }: Props) {
             </div>
 
           </div>
+
+          {/* Related products — inside the modal card */}
+          {related.length > 0 && (
+            <div className="border-t border-[var(--border)] px-6 py-5">
+              <p className="text-xs text-[var(--dim)] uppercase tracking-wider font-medium mb-4">
+                You might also like
+              </p>
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {related.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() => onOpenProduct(r)}
+                    className="flex-shrink-0 w-28 text-left group"
+                  >
+                    <div className="aspect-square rounded-xl overflow-hidden bg-[var(--surface-2)] border border-[var(--border)] group-hover:border-[var(--gold)]/40 transition-colors mb-2">
+                      {r.images[0] ? (
+                        <img src={r.images[0]} alt={r.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl text-[var(--dim)]">⛳</div>
+                      )}
+                    </div>
+                    <p className="text-xs text-[var(--dim)] group-hover:text-[var(--white)] transition-colors leading-snug line-clamp-2">
+                      {r.name}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

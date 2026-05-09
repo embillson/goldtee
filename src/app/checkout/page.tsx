@@ -40,8 +40,9 @@ export default function CheckoutPage() {
         }),
       });
       if (res.ok) {
+        const order = await res.json();
         clearCart();
-        router.push("/checkout/success");
+        router.push(`/order/${order.id}`);
       }
     } finally {
       setLoading(false);

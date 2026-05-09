@@ -2,21 +2,21 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useCart } from "@/store/cart";
+import { useWishlist } from "@/store/wishlist";
+import Logo from "./Logo";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { count, toggleCart } = useCart();
   const itemCount = count();
+  const { items: wishlistItems } = useWishlist();
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur border-b border-[var(--border)]">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link
-          href="/"
-          className="text-xl font-bold tracking-tight text-white"
-        >
-          ⛳ Gold<span className="text-[var(--gold)] font-light">Tee</span>
+        <Link href="/" className="flex items-center">
+          <Logo size={32} />
         </Link>
 
         {/* Desktop links */}
@@ -26,6 +26,14 @@ export default function Navbar() {
           </Link>
           <Link href="/about" className="hover:text-white transition-colors">
             About
+          </Link>
+          <Link href="/wishlist" className="relative hover:text-white transition-colors">
+            ♡ Wishlist
+            {wishlistItems.length > 0 && (
+              <span className="absolute -top-1.5 -right-3 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                {wishlistItems.length}
+              </span>
+            )}
           </Link>
           <Link
             href="/admin"
@@ -78,6 +86,13 @@ export default function Navbar() {
             className="text-[var(--dim)] hover:text-white transition-colors"
           >
             About
+          </Link>
+          <Link
+            href="/wishlist"
+            onClick={() => setMenuOpen(false)}
+            className="text-[var(--dim)] hover:text-white transition-colors"
+          >
+            ♡ Wishlist {wishlistItems.length > 0 && `(${wishlistItems.length})`}
           </Link>
           <Link
             href="/admin"
