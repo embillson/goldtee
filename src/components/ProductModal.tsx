@@ -87,6 +87,7 @@ export default function ProductModal({ product, related, onClose, onOpenProduct 
   }
 
   function handleAdd() {
+    if (!product) return;
     const variantLabel = selectedVariant?.label;
     const itemName = variantLabel ? `${product.name} — ${variantLabel}` : product.name;
     addItem({
